@@ -1,0 +1,16 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: VC-3
+  title: "Ready to instantiate"
+spec:
+  goal: A reader can run, test, connect v0 to and deploy the v0 clone from its README, and every departure from upstream is recorded
+  affects:
+    - README.md
+    - apps/web/README.md
+    - apps/preview/README.md
+    - specs/epics/v0-clone
+  doneWhen:
+    - the README covers run, test, connect, deploy, custom domains and the shared-workspace warning
+    - IMPLEMENTATION-STATUS records every departure
+  gates: []

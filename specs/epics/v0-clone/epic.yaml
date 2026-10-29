@@ -1,0 +1,35 @@
+# The epic's declaration. metadata.name equals the directory name; metadata.key
+# is the task-key prefix this epic reserves (VC → VC-1, VC-2, …). Owner, target
+# date and health are the platform's — never written here.
+apiVersion: orun.io/v1
+kind: Epic
+metadata:
+  name: v0-clone
+  key: VC
+spec:
+  title: "Vercel's v0 clone on two Cloudflare Workers, its preview on an origin of its own"
+  summary: "The v0 SDK's example app (vercel/v0-sdk examples/v0-clone, Apache-2.0) — a v0-style chat that creates and refines apps through the v0 Platform API, shows their files and a live preview, edits them in Design Mode, imports files, ZIPs and GitHub repositories and deploys them — runs as TWO Cloudflare Workers built by @opennextjs/cloudflare: the host app, and the preview proxy upstream keeps on a separate origin so generated code never runs on the host's. Vercel's Related Projects become per-environment origins rendered at build time; Vercel OIDC, which has no Cloudflare equivalent, is left out. The v0 API key stays what upstream makes it: optional — each visitor saves their own through the app's dialog, or the owner stores one as an Orun secret for both Workers."
+  state: started
+  milestones:
+    - name: "VC0 — the spec"
+      exitCriteria:
+        - "intent, CI, the shared tooling, the spec index, this doc set and the task contracts are on main"
+      tasks: [VC-1]
+    - name: "VC1 — the apps on Workers"
+      exitCriteria:
+        - "apps/web and apps/preview are upstream's two apps on Next.js 16 and @opennextjs/cloudflare, each its own Worker per environment"
+        - "each app knows the other's origin from the build (the workers.dev URL by default, an owner's custom domain when set); no Vercel Related Projects and no OIDC"
+        - "with no V0_API_KEY both apps serve, the host opens the API key dialog, and a saved key reaches both through their own cookies"
+        - "`pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` are green and both Workers fit Workers Free"
+      tasks: [VC-2]
+    - name: "VC2 — ready to instantiate"
+      exitCriteria:
+        - "the README says how to run, test, preview, connect v0 and deploy it, and what its shared-workspace warning means on Cloudflare"
+        - "the as-built status records every departure from the upstream example"
+      tasks: [VC-3]
+    - name: "VC3 — a baseline, in one landing"
+      exitCriteria:
+        - "blueprint.yaml (the console card) and repo-blueprint.yaml (the build) take a new app builder from nothing to live on stage and prod in ONE landing (01-product) and a hook-only record (02-docs)"
+        - "the product's push-to-main plan deploys web and preview, per environment, each smoke-tested"
+        - "Baseline CI is green: contract tests, the blueprint read by the pinned orun, the leak gate, the offline bootstrap and the end-to-end tier (both Workers served under wrangler dev, a key provisioned across them against a stand-in v0 API)"
+      tasks: [VC-4]
