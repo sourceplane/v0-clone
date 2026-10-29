@@ -1,0 +1,27 @@
+# Task contract template for the 01-product landing.
+# Unbound to a key on purpose: `orun.task/ensure@v1` seals and attaches it to
+# the key the allocator issues. It lives under `.baseline/`, not `tasks/`,
+# because `tasks/` is this repository's own work tree (`intent.yaml` `work:`),
+# where an unkeyed contract is an error. gates: [] is a DECLARATION — merge
+# alone finishes this task; the main convergence is the gate the bootstrap
+# watches, not one the plane observes as a PR check.
+#
+# The whole product in one landing. `affects` names COMPONENTS, by
+# metadata.name: the phase's retouch hook reads this list to decide which
+# component.yaml files get the redeploy marker, so a re-run of the phase has a
+# diff and exactly these components are re-planned — the deploy set and the
+# task plane's statement of the work are one list.
+apiVersion: orun.io/v1
+kind: TaskContract
+spec:
+  goal: The product's repository is born and linked, the whole product lands in one pull request, and one convergence deploys the preview origin and then the host app on stage and prod
+  affects:
+    - preview
+    - preview-tests
+    - web
+    - web-tests
+  doneWhen:
+    - repo pushed, main pinned as default, workspace linked
+    - main convergence green (the preview origin built, deployed and smoke-tested, then the host app, on stage and prod)
+    - both apps answer on their workers.dev URLs, the host app's health naming its preview origin
+  gates: []

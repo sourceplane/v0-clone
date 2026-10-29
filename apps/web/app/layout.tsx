@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { SITE_NAME } from '@/lib/site'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { ThemeProvider } from 'next-themes'
@@ -13,7 +14,7 @@ import './globals.css'
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'v0 clone',
+  title: SITE_NAME,
   description: 'A v0.app clone built with AI Elements and Geist.',
 }
 

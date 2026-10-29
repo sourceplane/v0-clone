@@ -1,0 +1,163 @@
+# The v0-clone card: what the console's Blueprints page renders and
+# the platform's bootstrap door consumes.
+#
+# THIS FILE IS NOT THE BUILD. `spec.bootstrap.blueprint` names the build
+# document — `repo-blueprint.yaml`, whose phases a runner places. This card is
+# what an operator reads and fills in before pressing Build, and
+# `testing/manifest.test.sh` compares every list below to the document that
+# actually does the thing, not to a copy of itself.
+#
+# The division of labour with the registry is strict: the registry (orun-cloud
+# `infra/baselines-registry/baselines.yaml`) owns identity and commerce — id,
+# visibility, tier, the pinned tag. This file owns the build contract. Neither
+# restates the other, which is why there is no `tag` here: this file is
+# fetched AT the tag the registry pins.
+apiVersion: orun.io/v1
+kind: Blueprint
+metadata:
+  name: v0-clone
+  displayName: v0 Clone — Vercel's AI app builder over the v0 Platform API, on Cloudflare Workers
+  description: >
+    Vercel's v0 clone (the v0 SDK's example app) as a product of its own: a
+    v0-style chat where you describe an app, the v0 Platform API writes it,
+    and you refine it, read and edit its files, restore a version, design
+    against its live preview and deploy it — with every preview served from
+    an origin of its own, so generated code never runs beside the app that
+    holds the key. Two Next.js apps, each built by OpenNext into its own
+    Cloudflare Worker with Static Assets and each told the other's origin at
+    build, and CI that deploys the preview origin and then the host app to
+    stage and prod on merge. Live with no key: each visitor connects their
+    own v0 key in the browser, or the owner stores one for the whole
+    deployment as a secret. One provider, one consent, one token. Live in
+    about nine minutes, in one landing.
+  tags: [ai, app-builder, v0, code-generation, cloudflare, nextjs, turborepo]
+spec:
+  source:
+    repo: sourceplane/v0-clone
+    # No `tag`. The registry pins it; this file is fetched at it.
+
+  # ── What the operator reads first ────────────────────────────────────────
+  overview:
+    lede: >
+      A v0-style app builder: describe an app, v0 writes it, and you refine
+      it in chat, edit its files, restore versions and deploy it — its
+      previews on an isolated origin. Bring your own v0 key in the browser,
+      or store one for the whole deployment.
+    architecture:
+      - layer: Edge
+        items: [web, preview]
+      - layer: AI
+        items: [v0 Platform API (your v0 key)]
+      - layer: Delivery
+        items: [GitHub Actions, OpenNext, Turborepo]
+    outcome:
+      - The app and its preview origin live on stage and prod, in one landing
+      - The preview origin deployed before the app that frames it
+      - Each visitor's v0 key in their browser, or one key stored for the deployment
+      - Every merge redeploys, smoke-tested
+
+  requires:
+    # Cloudflare is the only provider connection a bootstrap needs. GitHub
+    # arrives as the App installation plus the repo link, not as a
+    # connection row. v0 is not here: no platform brokers a v0 key, the
+    # product deploys and serves without one, and a visitor connects their
+    # own in the browser (or the owner stores V0_API_KEY afterwards — the
+    # product's README, "Connecting v0").
+    integrations: [github, cloudflare]
+    apiKeyRole: admin          # secret writes need the admin floor
+
+  # Every input is collected by the console: keys are lowercase (the
+  # platform's reader refuses anything else), every one carries the `pattern`
+  # its value is checked against before Continue, and a value the console
+  # already holds says so with `from`. repo-blueprint.yaml declares the same
+  # names; `repoPrivate`, `orunWorkspace` and `epicSlug` are build inputs with
+  # defaults (or filled from the build's workspace) and are not asked.
+  #
+  # NOR IS THE DOMAIN. Both apps go live on workers.dev, and a domain is an
+  # owner's step after the bootstrap: `productdomain` defaults to empty, the
+  # rebrand writes the reserved placeholder `<reponame>.example.com` where
+  # the domain goes, and the product's README ("Custom domains") says how to
+  # set one for each app. Nothing that needs a domain is removed — it waits
+  # for one.
+  inputs:
+    - key: reponame
+      label: Repo name
+      pattern: "^[a-z][a-z0-9-]{1,38}$"
+      # The operator picked the repository; its name IS this value.
+      from: repo.name
+    - key: productname
+      label: Product name
+      pattern: "^[A-Za-z0-9][A-Za-z0-9 .,'&-]{1,48}$"
+      help: The name visitors see — the app's title and the preview origin's heading.
+      example: Acme Builder
+    - key: githuborg
+      label: GitHub organisation
+      pattern: "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      help: The GitHub org or user the product's repository is created under.
+      # DERIVED FROM THE CHOSEN REPOSITORY: its owner IS this value. Declared
+      # because repo-blueprint.yaml requires it — a build may declare more
+      # inputs than this card, but not require one nobody supplies.
+      from: repo.owner
+    - key: subdomain
+      label: workers.dev subdomain
+      pattern: "^[a-z0-9][a-z0-9-]{0,62}$"
+      help: The workers.dev subdomain of the Cloudflare account the product deploys into.
+      example: acme
+      # READ FROM THE CLOUDFLARE CONNECTION, not asked. The subdomain belongs
+      # to the account the same way its id does, and there is exactly one
+      # right answer — a typed one could only be wrong, and wrong showed up
+      # after deploy, in the smoke checks and the verify URLs below. The
+      # integration reads it from Cloudflare at connect and on its hourly
+      # health check; the bootstrap door fills this input from the connection
+      # the build is BOUND to, the same one CLOUDFLARE_ACCOUNT_ID and the
+      # deploy tokens mint from, so all three name one account. The console
+      # renders no field for it, and an account with no workers.dev subdomain
+      # refuses the build at the door, naming the fix, before anything is
+      # created.
+      from: connection.cloudflare.workersSubdomain
+
+  # ── PREVIEW ONLY. repo-blueprint.yaml's one `orun.integrations/reconcile@v1`
+  # hook (`secrets`) mints these, brokered, during 01-product. ──────────────
+  # Transcribed from that hook's own `secrets:` entries (each key and its
+  # template), in its order, so testing/manifest.test.sh compares this list
+  # to the document that mints them. The console renders them read-only: no
+  # credential is ever typed, shown or stored. Keys that already exist are
+  # kept. V0_API_KEY is not here: it is optional, the owner's own, and no
+  # connection can mint it.
+  secrets:
+    - key: CLOUDFLARE_API_TOKEN
+      provider: cloudflare
+      template: workers-deploy
+      why: Deploys both Workers and their static assets
+    - key: CLOUDFLARE_ACCOUNT_ID
+      provider: cloudflare
+      template: account-id
+      why: Connection fact, not a secret
+      fact: true
+
+  # ── PREVIEW ONLY. repo-blueprint.yaml's run-level `hooks.preInstantiate`
+  # opens these — the epic, every milestone in this order, every task — before
+  # the first phase places. Idempotent by identity, so a re-run finds what it
+  # made before.
+  programme:
+    epicSlug: app-builder-baselining      # = repo-blueprint.yaml's `epicSlug` default
+    epicName: "App builder baselining — {productname}"
+    milestones:
+      # The whole product is one landing (01-product): the repository, both
+      # apps and their tests are one pull request and one convergence.
+      - name: 01-product
+      - name: 02-docs
+
+  bootstrap:
+    # THE BUILD DOCUMENT. There is no umbrella workflow and no agent brief:
+    # every phase is declared in it and orun runs it.
+    blueprint: repo-blueprint.yaml
+    # Summed from the phases' expectedMinutes (8 + 1). An estimate until a
+    # bootstrap measures it: no build of this baseline has been timed.
+    expectedMinutes: 9
+    tokenChannel: ORUN_TOKEN_FILE   # how a runner hands over its refreshed token
+  verify:
+    urls:
+      - "https://{reponame}-web-{env}.{subdomain}.workers.dev"
+      - "https://{reponame}-preview-{env}.{subdomain}.workers.dev"
+    envs: [stage, prod]

@@ -6,12 +6,21 @@ Vercel's [v0 clone](https://github.com/vercel/v0-sdk/tree/main/examples/v0-clone
 from an isolated origin, Design Mode, file, ZIP and GitHub imports, version
 restore and one-click deploys — running as **two Cloudflare Workers** built by
 [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare): the host app
-and its preview proxy, each on its own origin, deployed per environment
-through [Orun](https://github.com/sourceplane/orun). It keeps no store of its
-own: chats, files and previews are the v0 API's.
+and its preview proxy, each on its own origin and each told the other's at
+build, deployed per environment through
+[Orun](https://github.com/sourceplane/orun), and packaged as an **Orun
+baseline**: one command takes a new app builder from nothing to live on stage
+and prod, in its own repository, under its own name — in ONE landing.
 
-The v0 SDK and its example are © Vercel, Inc., under the Apache License 2.0
-(`apps/web/LICENSE`, `apps/preview/LICENSE`). See
+It keeps no store of its own — chats, files and previews are the v0 API's —
+and it goes live with no key: each visitor connects their own v0 key in the
+browser, and an owner who wants one key for everyone stores it afterwards as
+an optional secret. Upstream dropped its database and accounts on
+2026-07-30, so there is no data plane to provision: one provider (Cloudflare)
+and one brokered token deploy both Workers. What the baseline adds is
+everything needed to make a copy of it somebody else's, built the way
+[cirrus-baseline](https://github.com/sourceplane/cirrus-baseline) is since
+its one-landing bootstrap. See
 [`specs/epics/v0-clone`](specs/epics/v0-clone/README.md) for the design, the
 milestones and the as-built status.
 
@@ -26,7 +35,46 @@ milestones and the as-built status.
 > app's dialog) or put [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/applications/)
 > in front of both Workers before you store one.
 
-## What is here
+## Instantiating a product
+
+```bash
+git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/v0-clone
+cd v0-clone
+orun new --blueprint repo-blueprint.yaml --out ~/sites/acme-builder --run-hooks --resume \
+  --set reponame=acme-builder --set productname="Acme Builder" \
+  --set githuborg=acme-inc --set subdomain=<workers-dev-subdomain>
+```
+
+Or, once the platform's registry lists it, from the Orun console (Baselines →
+`v0-clone` → Build). Two phases: **`01-product`** creates the repository
+and lands the whole product as ONE pull request — intent, CI, tooling, both
+apps and their tests — and one convergence deploys, in each environment, the
+preview origin and then the host app built with its origin, stage and prod
+side by side; **`02-docs`** records the live deployment from probed facts.
+**[BOOTSTRAP.md](BOOTSTRAP.md)** is the operator guide;
+[docs/phases/](docs/phases/README.md) has a page per phase. About nine
+minutes, an estimate until a bootstrap measures it.
+
+The new repository receives the **product only** — both apps, their tests,
+its CI, its tooling, a README and an `AGENTS.md` of its own and its operating
+contract — renamed throughout to the product's name, repository and Worker
+names. Upstream's credit and its own `V0_CLONE_ORIGIN` variable keep
+upstream's name. None of this repository's machinery ships.
+
+| What makes it a baseline | Where |
+|---|---|
+| The console card (inputs, secrets, programme) | `blueprint.yaml` |
+| The build document (modules, phases, hooks) | `repo-blueprint.yaml` |
+| This tree's identity, and the bootstrap's task contracts | `.baseline/` |
+| The rename engine | `tooling/rebrand/rebrand.mjs` |
+| The bootstrap's helpers (deferrals, redeploy marker, work-tree strip) | `tooling/bootstrap/` |
+| The component docs generator | `tooling/catalog/gen-component-docs.py` |
+| The deployment-record renderer | `hooks/render-deployment-docs.sh` |
+| The product's README, its `AGENTS.md` and its context pack | `.baseline/product/`, `ai/context/` |
+| The baseline's tests: contract, leak, offline bootstrap, end to end (a v0 API stand-in) | `testing/`, `.github/workflows/baseline.yml` |
+| Cutting a `baseline-vN` tag | `.github/workflows/tag.yml` |
+
+## What is here (the product)
 
 | Surface | Where |
 |---|---|
@@ -35,6 +83,9 @@ milestones and the as-built status.
 | Where each app finds the other | `apps/web/lib/preview-proxy.ts`, `apps/preview/lib/origins.ts` |
 | The v0 key (server, else the visitor's cookie) | `apps/web/lib/v0-client.ts`, `apps/preview/lib/v0-client.ts` |
 | Workers build and deploy contract | each app's `next.config.mjs`, `open-next.config.ts`, `wrangler.jsonc`, `component.yaml` |
+| The product's name | `apps/web/lib/site.ts`, `apps/preview/lib/site.ts` |
+| What each deploy's smoke reads | `apps/web/app/api/health/route.ts`, `apps/preview/app/api/health/route.ts` |
+| The Worker-secrets helper | `tooling/wire/worker-secrets.mjs` |
 | Tests | `tests/web` (upstream's Design Mode tests, the host's routes), `tests/preview` (the key route, trusted hosts) |
 
 ## Getting started
@@ -120,6 +171,11 @@ preview. Stage and prod take two; remove stale ones in v0's settings.
 
 ## CI
 
-| Workflow | What it runs |
-|---|---|
-| `ci.yml` | the Orun pipeline: `orun plan --changed`, then one job per lane. A pull request verifies (both apps built and dry-deployed per environment, both test suites run); a merge deploys the preview proxy, then the host, stage → prod. It plans nothing while `intent.yaml` names the placeholder workspace `ws_CHANGE_ME`, as this repository does. A manual run (Orunbase's Deploy button, or Run workflow on `main`) plans the environment and components it names under the push-to-main trigger |
+| Workflow | What it runs | Ships to a product |
+|---|---|---|
+| `ci.yml` | the Orun pipeline, and the only workflow a product carries: `orun plan --changed`, then one job per lane. A pull request runs the verify lanes (both apps built and dry-deployed per environment, both test suites run on dev), except the bootstrap's own landings (`orun/BASE-*`), where `plan` alone runs and nothing waits for it (the landing checked its commit in the box); a merge deploys the preview proxy, then the host, stage → prod. It plans nothing while `intent.yaml` names the placeholder workspace `ws_CHANGE_ME`, as this repository does. A manual run (Orunbase's Deploy button, or Run workflow on `main`) plans the environment and components it names under the push-to-main trigger, so they deploy as a merge deploys them | yes |
+| `baseline.yml` | the baseline's own tiers: contract tests, the blueprint read by the pinned orun, the leak gate, the offline bootstrap with the product's own plan (the preview before the host), and the product installed, linted and tested, each app built and dry-deployed in its own staged job tree, and both served — the key provisioned host → proxy, a chat's preview served through the proxy from a v0 API stand-in, both deploys' own smokes passed | no |
+| `tag.yml` | cuts a `baseline-vN` tag (manual) | no |
+
+The v0 SDK and its example are © Vercel, Inc., under the Apache License 2.0
+(`apps/web/LICENSE`, `apps/preview/LICENSE`).

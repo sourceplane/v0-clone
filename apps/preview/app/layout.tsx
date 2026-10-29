@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
+import { SITE_NAME } from '@/lib/site'
 
 export const metadata: Metadata = {
-  title: 'v0 Preview Proxy',
-  description: 'Isolated preview proxy for the v0 clone example.',
+  title: `${SITE_NAME} preview`,
+  description: `The isolated preview origin for ${SITE_NAME}.`,
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

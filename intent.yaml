@@ -47,9 +47,9 @@ compositions:
     # Node build reads fonts and compiles wasm at runtime), and turbopack.root
     # cannot move without moving outputFileTracingRoot, and OpenNext's standalone
     # layout with it. Under 0.19.0 the job installs inside its own tree, and the
-    # site has one job per lane (`lane: isolated`), so the shared install would
-    # save nothing anyway. testing/e2e.test.sh stages the job with whichever
-    # layout the pinned composition plans, so a bump is tested, not assumed.
+    # product has one job per lane (`lane: isolated`), so the shared install
+    # would save nothing anyway. 0.19.0 is also the floor: it retries a first
+    # deploy through Cloudflare's 10007 race and runs the smoke under backoff.
     - name: stack-tectonic
       kind: oci
       ref: oci://ghcr.io/sourceplane/stack-tectonic:0.19.0
@@ -72,7 +72,7 @@ discovery:
 # epic.yaml under `epics`, a task a contract under `tasks`; the `orun plan` on
 # main reconciles the tree into the workspace's work plane after a merge.
 #
-# THIS BLOCK IS THE BASELINE'S OWN. A site built from this baseline has no
+# THIS BLOCK IS THE BASELINE'S OWN. A product built from this baseline has no
 # `specs/` and no `tasks/` (its bootstrap work lives on the platform), so
 # 01-product removes the block, and this comment with it, from the
 # product's copy (tooling/bootstrap/work-tree.mjs).

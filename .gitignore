@@ -26,7 +26,3 @@ crash.log
 # orun per-job staged workspaces and object-model caches.
 **/.orun/runs/
 **/.orun/
-
-# apps/web/wrangler.jsonc is NOT ignored: it is committed as the fixture render
-# of wrangler.template.jsonc, because the deploy lane checks the config exists
-# before it builds (and re-renders it for its environment in the build).
