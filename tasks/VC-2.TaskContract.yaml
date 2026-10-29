@@ -1,0 +1,19 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: VC-2
+  title: "The apps on Workers"
+spec:
+  goal: The v0 clone's host app and preview proxy run as two Cloudflare Workers through @opennextjs/cloudflare, each told the other's origin at build, the v0 key optional on both, with green checks
+  affects:
+    - apps/web
+    - apps/preview
+    - tests/web
+    - pnpm-lock.yaml
+    - package.json
+    - turbo.json
+  doneWhen:
+    - pnpm typecheck, lint, test and build are green
+    - both Workers' dry-run sizes fit Workers Free
+    - under wrangler dev the host serves, its dialog's key is accepted by the proxy, and the proxy serves a preview through a stand-in v0 API
+  gates: []
