@@ -114,7 +114,9 @@ s01="$(git -C "$tree" rev-parse HEAD~1)"
 echo "── 01-product's landing: install, typecheck, lint, test"
 git -C "$tree" worktree add -q "$scratch/at-01" "$s01"
 checks "$scratch/at-01" "$scratch/checks-01.log"
-suites="$(sed 's/\x1b\[[0-9;]*m//g' "$scratch/checks-01.log" | grep -Ec '^@app/(web|preview)-tests:test: +Tests +[0-9]+ passed' || true)"
+# Turbo prefixes each line with its task locally and groups them instead on
+# GitHub Actions, so the prefix is optional.
+suites="$(sed 's/\x1b\[[0-9;]*m//g' "$scratch/checks-01.log" | grep -Ec '^(@app/(web|preview)-tests:test: )? *Tests +[0-9]+ passed' || true)"
 [ "$suites" = 2 ] || { echo "FAIL: $suites of the two suites reported passing tests" >&2; exit 1; }
 # Done with it; the disk is shared.
 git -C "$tree" worktree remove --force "$scratch/at-01"
