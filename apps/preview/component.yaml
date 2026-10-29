@@ -1,0 +1,82 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: preview
+  description: The v0 clone's preview proxy, on an origin of its own — it fetches each chat's preview with the v0 key and serves it into the host app's iframe (Next.js on Cloudflare Workers + Static Assets via @opennextjs/cloudflare, per environment)
+spec:
+  type: cloudflare-workers-assets-turbo
+  lifecycle: production
+  owner: platform
+  # Its pages, attached to it in the workspace's catalog: what the Docs
+  # library shows for it, and what the catalog's docs and runbook checks read.
+  # Generated from what this manifest and its sources declare.
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/architecture.md, role: architecture, title: Architecture }
+      - { path: docs/runbook.md, role: runbook, title: Runbook }
+  domain: app
+  path: apps/preview
+  # Its own lane per environment, as the host's: a Next.js build each.
+  lane: isolated
+  # The same optional v0 key the host reads (apps/web/component.yaml): unset,
+  # the host app provisions each visitor's key into this proxy's own
+  # partitioned cookie; set, both Workers use it. A Worker SECRET, never in
+  # a bundle (buildCommand below).
+  optionalSecretEnv:
+    V0_API_KEY: "secret://v0-clone/v0-clone/{{ .environment }}/V0_API_KEY"
+  subscribe:
+    environments:
+      - name: dev
+        profile: verify
+      - name: stage
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+      - name: prod
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+
+    workspaceDir: ../..
+    appDir: .
+
+    turboFilter: "@app/preview"
+    wranglerConfig: wrangler.jsonc
+
+    workerEntrypoint: .open-next/worker.js
+    assetsDir: .open-next/assets
+
+    # Per-env worker name: v0-clone-preview-{dev,stage,prod} — a hostname of
+    # its own, so the preview is cross-origin to the host app.
+    workerName: v0-clone-preview
+    environmentAwareWorkerName: true
+
+    workersDevSubdomain: your-workers-subdomain
+
+    installCommand: pnpm install --frozen-lockfile
+    # The host app's origin, inlined into the build
+    # (NEXT_PUBLIC_V0_CLONE_ORIGIN, lib/origins.ts) — the only origin allowed
+    # to provision this proxy's key: the environment's V0_CLONE_ORIGIN when
+    # intent.yaml sets one (a custom domain), else the host Worker's
+    # workers.dev URL for this environment. The v0 key never reaches the
+    # build, and goes to the Worker as a SECRET when the environment has one,
+    # as the host's does.
+    buildCommand: env -u V0_API_KEY NEXT_PUBLIC_V0_CLONE_ORIGIN="${V0_CLONE_ORIGIN:-https://v0-clone-web-${ORUN_ENVIRONMENT}.your-workers-subdomain.workers.dev}" pnpm exec turbo run build --filter=@app/preview && node ../../tooling/wire/worker-secrets.mjs --secret V0_API_KEY --worker "v0-clone-preview-${ORUN_ENVIRONMENT}" --config wrangler.jsonc
+
+    # Smoke: /api/health answers as the preview proxy — which only this
+    # Worker can — naming the host app origin its build was given. Read-only,
+    # no v0 call; a preview itself needs a chat, which needs a key.
+    smokeCommand: "health=$(curl -sf \"${DEPLOYED_URL}/api/health\") && echo \"${health}\" | grep -q '\"app\":\"preview\"' && echo \"${health}\" | grep -q '\"ok\":true'"
+  labels:
+    team: platform
+    layer: delivery
+    surface: preview
+    runtime: cloudflare

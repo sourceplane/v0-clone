@@ -8,7 +8,7 @@ The port keeps the chat, the sidebar of favourite and recent chats, file, ZIP an
 
 | Field | Value |
 |-------|-------|
-| Status | VC0 in progress |
+| Status | VC0–VC1 shipped (#1, #2); VC2 in progress |
 | Cluster | **VC** (VC0–VC3) |
 | Owner(s) | `apps/web` (the host: chat UI, server routes, the preview iframe) · `apps/preview` (the preview proxy) · `tests/web` |
 | Builds on | `ai-chatbot` (the OpenNext shape, the CI and tooling), `portfolio-starter-kit` (a baseline with no data plane), `next-forge` (several Workers in one product), `ai-emoji-generator` (optional Orun secrets pushed as Worker secrets) |
