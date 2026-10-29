@@ -1,0 +1,114 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: web
+  description: The v0 clone's host app — the chat UI, its server routes over the v0 Platform API and the preview iframe (Next.js on Cloudflare Workers + Static Assets via @opennextjs/cloudflare, per environment)
+spec:
+  type: cloudflare-workers-assets-turbo
+  lifecycle: production
+  owner: platform
+  # Its pages, attached to it in the workspace's catalog: what the Docs
+  # library shows for it, and what the catalog's docs and runbook checks read.
+  # Generated from what this manifest and its sources declare.
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/architecture.md, role: architecture, title: Architecture }
+      - { path: docs/runbook.md, role: runbook, title: Runbook }
+  # `app`, not `web`: a domain and a component share one name space in the
+  # catalog, and a domain called `web` would hide this component from it.
+  domain: app
+  path: apps/web
+  # Its own lane per environment: the Next.js build is the longest job in the
+  # plan, and a shared lane would wait on it.
+  lane: isolated
+  # THE PREVIEW PROXY BEFORE THE HOST. The host's iframe points at the preview
+  # Worker, and this deploy's smoke checks that the origin it was built with
+  # answers as the preview proxy. So on a merge to main this deploy waits for
+  # its environment's preview deploy (enforced). A pull request deploys
+  # nothing, so nothing on one waits (advisory).
+  dependsOn:
+    - component: preview
+      mode: enforced
+      modeRules:
+        - mode: advisory
+          when:
+            triggerRef: github-pull-request
+  # The v0 API key, stored per environment as the product's secret
+  # V0_API_KEY (README → Connecting v0). OPTIONAL, as upstream makes it: a key
+  # nobody has stored is skipped when the job resolves its secrets (no env
+  # var, no failure), and the app then asks each visitor for their own key.
+  # Set, every visitor shares it — the README says to put Cloudflare Access in
+  # front of both Workers first. The Worker reads it at request time, so the
+  # build hands it to the Worker as a Worker SECRET and no bundle contains it
+  # (buildCommand below). The preview proxy reads the same key.
+  optionalSecretEnv:
+    V0_API_KEY: "secret://v0-clone/v0-clone/{{ .environment }}/V0_API_KEY"
+  subscribe:
+    environments:
+      - name: dev
+        profile: verify
+      - name: stage
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+      - name: prod
+        profile: verify
+        profileRules:
+          - profile: deploy
+            when:
+              triggerRef: github-push-main
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+
+    workspaceDir: ../..
+    appDir: .
+
+    turboFilter: "@app/web"
+    wranglerConfig: wrangler.jsonc
+
+    # @opennextjs/cloudflare emits a Worker entrypoint plus a static-assets
+    # directory bound via ASSETS — both deploy in one `wrangler deploy`.
+    workerEntrypoint: .open-next/worker.js
+    assetsDir: .open-next/assets
+
+    # Per-env worker name: v0-clone-web-{dev,stage,prod}.
+    workerName: v0-clone-web
+    environmentAwareWorkerName: true
+
+    # The account's workers.dev subdomain; exported to the smoke step as
+    # ${WORKERS_DEV_SUBDOMAIN} and used to build ${DEPLOYED_URL}.
+    workersDevSubdomain: your-workers-subdomain
+
+    installCommand: pnpm install --frozen-lockfile
+    # The preview proxy's origin, inlined into the build
+    # (NEXT_PUBLIC_V0_PREVIEW_PROXY_URL, lib/preview-proxy.ts): the
+    # environment's V0_PREVIEW_PROXY_URL when intent.yaml sets one (a custom
+    # domain), else the preview Worker's workers.dev URL for this environment.
+    # The subdomain is written out rather than read from
+    # ${WORKERS_DEV_SUBDOMAIN}: the composition exports that to the smoke step
+    # only. ${ORUN_ENVIRONMENT} the runner sets for every step. The v0 key
+    # never reaches the build (`env -u`): the Worker reads it at request time.
+    # Then the key, when the environment has one, goes to the Worker as a
+    # SECRET (tooling/wire/worker-secrets.mjs: `wrangler secret bulk`, the
+    # value over stdin) before the composition deploys it. Only the deploy
+    # lane holds a Cloudflare credential, so a verify lane builds the same and
+    # pushes nothing.
+    buildCommand: env -u V0_API_KEY NEXT_PUBLIC_V0_PREVIEW_PROXY_URL="${V0_PREVIEW_PROXY_URL:-https://v0-clone-preview-${ORUN_ENVIRONMENT}.your-workers-subdomain.workers.dev}" pnpm exec turbo run build --filter=@app/web && node ../../tooling/wire/worker-secrets.mjs --secret V0_API_KEY --worker "v0-clone-web-${ORUN_ENVIRONMENT}" --config wrangler.jsonc
+
+    # Smoke: the home page renders to its end (`</html>` — a render that
+    # throws partway through a streamed page still sent a 200) with no v0
+    # key involved, /api/health answers ok — which only the Worker can — and
+    # the preview proxy origin it names, the one this build inlined, answers
+    # as the preview proxy: the iframe points somewhere real. Read-only, no v0
+    # call. Each response is buffered before grep so an early match cannot
+    # SIGPIPE curl.
+    smokeCommand: "html=$(curl -sfL \"${DEPLOYED_URL}/\") && echo \"${html}\" | grep -q '</html>' && health=$(curl -sf \"${DEPLOYED_URL}/api/health\") && echo \"${health}\" | grep -q '\"ok\":true' && proxy=$(printf '%s' \"${health}\" | grep -Eo '\"previewProxy\":\"[^\"]+\"' | cut -d'\"' -f4) && pv=$(curl -sf \"${proxy}/api/health\") && echo \"${pv}\" | grep -q '\"app\":\"preview\"'"
+  labels:
+    team: platform
+    layer: delivery
+    surface: web
+    runtime: cloudflare
