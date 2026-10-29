@@ -1,0 +1,31 @@
+{
+  "name": "@app/preview",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3001",
+    "build": "next build && opennextjs-cloudflare build --skipBuild --skipWranglerConfigCheck && opennextjs-cloudflare populateCache local",
+    "start": "next start --port 3001",
+    "preview": "opennextjs-cloudflare preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@opennextjs/cloudflare": "^1.20.11",
+    "next": "16.3.8",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "v0": "3.0.12"
+  },
+  "devDependencies": {
+    "@app/eslint-config": "workspace:*",
+    "@app/tsconfig": "workspace:*",
+    "@types/node": "^22.9.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9.27.0",
+    "eslint-config-next": "16.3.8",
+    "typescript": "^5.8.3",
+    "wrangler": "^4.151.0"
+  }
+}

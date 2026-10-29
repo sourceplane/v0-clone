@@ -1,0 +1,6 @@
+# Copy to .dev.vars for `wrangler dev` / `pnpm preview` (never committed).
+#
+# Optional. Unset, each visitor saves their own v0 key through the app's
+# dialog. Set, every visitor shares this key's v0 workspace and credits —
+# set the same key on both apps (README, "Connecting v0").
+# V0_API_KEY=

@@ -1,0 +1,20 @@
+// The host app: the chat UI, its server routes and the preview iframe (upstream's apps/web).
+// Committed as-is: the composition's structure check needs it before the
+// build, and nothing in it differs per environment — the Worker name gets its
+// environment suffix from the deploy (component.yaml,
+// environmentAwareWorkerName), and the other app's origin is inlined at build
+// time (component.yaml's buildCommand). V0_API_KEY is an optional Worker
+// SECRET, never a var (tooling/wire/worker-secrets.mjs; README, "Connecting
+// v0").
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "v0-clone-web",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true }
+}

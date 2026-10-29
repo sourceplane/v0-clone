@@ -1,0 +1,22 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": [
+    "//"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "env": [
+        "NEXT_PUBLIC_V0_PREVIEW_PROXY_URL",
+        "NEXT_PUBLIC_V0_CLONE_ORIGIN"
+      ],
+      "outputs": [
+        ".open-next/**",
+        ".next/**",
+        "!.next/cache/**"
+      ]
+    }
+  }
+}
