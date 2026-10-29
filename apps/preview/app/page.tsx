@@ -1,4 +1,5 @@
 import { getCloneOrigin } from '@/lib/origins'
+import { SITE_NAME } from '@/lib/site'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,11 +45,11 @@ export default function PreviewProxyPage() {
           </span>
         </div>
         <h1 style={{ fontSize: 24, letterSpacing: '-0.03em', margin: '20px 0 10px' }}>
-          v0 Preview Proxy
+          {SITE_NAME} preview
         </h1>
         <p style={{ color: '#525252', fontSize: 15, lineHeight: 1.6, margin: 0 }}>
-          This deployment is the isolated origin used to serve generated previews. Open the v0 clone
-          app to create and view chats.
+          This deployment is the isolated origin used to serve generated previews. Open {SITE_NAME}{' '}
+          to create and view chats.
         </p>
         <dl
           style={{
@@ -80,7 +81,7 @@ export default function PreviewProxyPage() {
               textDecoration: 'none',
             }}
           >
-            Open v0 Clone
+            Open {SITE_NAME}
           </a>
         ) : null}
       </section>
