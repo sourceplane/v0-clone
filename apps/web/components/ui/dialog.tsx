@@ -54,6 +54,9 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           'fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border bg-background p-6 shadow-lg duration-200 outline-none data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 sm:max-w-lg',
+          // A phone: a sheet that rises from the bottom, with a grab handle.
+          'max-md:top-auto max-md:bottom-0 max-md:left-0 max-md:max-w-full max-md:translate-x-0 max-md:translate-y-0 max-md:rounded-t-3xl max-md:rounded-b-none max-md:border-x-0 max-md:border-b-0 max-md:pt-8 max-md:pb-[max(1.5rem,env(safe-area-inset-bottom))] max-md:duration-300 max-md:data-[state=closed]:slide-out-to-bottom max-md:data-[state=closed]:zoom-out-100 max-md:data-[state=open]:slide-in-from-bottom max-md:data-[state=open]:zoom-in-100',
+          'max-md:before:absolute max-md:before:top-2.5 max-md:before:left-1/2 max-md:before:h-1 max-md:before:w-10 max-md:before:-translate-x-1/2 max-md:before:rounded-full max-md:before:bg-muted-foreground/30',
           className,
         )}
         {...props}

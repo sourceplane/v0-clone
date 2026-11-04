@@ -58,7 +58,8 @@ export function PromptBox({
   return (
     <PromptInput
       className={cn(
-        '*:data-[slot=input-group]:rounded-2xl *:data-[slot=input-group]:border-border *:data-[slot=input-group]:bg-card *:data-[slot=input-group]:shadow-sm',
+        // A phone: a rounder, softer box, the way a native chat app draws it.
+        '*:data-[slot=input-group]:rounded-[1.75rem] *:data-[slot=input-group]:border-border *:data-[slot=input-group]:bg-card *:data-[slot=input-group]:shadow-sm md:*:data-[slot=input-group]:rounded-2xl',
         className,
       )}
       onSubmit={handleSubmit}
@@ -68,7 +69,7 @@ export function PromptBox({
           autoFocus={autoFocus}
           className={cn(
             'min-h-[52px] bg-transparent px-4 pt-3.5 text-base',
-            compact && 'min-h-[44px] px-3 pt-3 text-sm',
+            compact && 'min-h-[44px] px-4 pt-3 md:px-3',
           )}
           disabled={isSubmitting}
           placeholder={placeholder}
@@ -104,7 +105,7 @@ export function PromptBox({
         <PromptInputTools>
           <PromptInputSubmit
             aria-label={isStreaming ? 'Stop generating' : 'Send message'}
-            className="size-8 rounded-lg"
+            className="size-9 rounded-full md:size-8 md:rounded-lg"
             disabled={isStreaming ? !onStop || isStopping : !onSubmit || isSubmitting}
             onClick={isStreaming ? () => onStop?.() : undefined}
             type={isStreaming ? 'button' : 'submit'}

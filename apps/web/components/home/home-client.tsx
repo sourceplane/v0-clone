@@ -12,7 +12,7 @@ import { useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'rea
 import { PromptBox } from '@/components/prompt-box'
 import { PromptInputButton } from '@/components/ai-elements/prompt-input'
 import { ConversationView } from '@/components/chat/conversation-view'
-import { SidebarToggleButton } from '@/components/layout/app-shell'
+import { MobileTopBar, SidebarToggleButton } from '@/components/layout/app-shell'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useSettings } from '@/lib/hooks/useSettings'
 import { FileIcon, PlusIcon } from '@/lib/icons'
+import { SITE_NAME } from '@/lib/site'
 
 export function HomeClient() {
   const router = useRouter()
@@ -195,8 +196,9 @@ export function HomeClient() {
 
   return (
     <>
-      <div className="flex h-full flex-col px-4">
-        <SidebarToggleButton className="mt-2 self-start" />
+      <div className="flex h-full flex-col md:px-4">
+        <MobileTopBar title={SITE_NAME} />
+        <SidebarToggleButton className="mt-2 self-start" wideOnly />
         <input className="hidden" multiple onChange={importFiles} ref={filesInputRef} type="file" />
         <input
           accept=".zip,application/zip"
@@ -208,15 +210,23 @@ export function HomeClient() {
         {messages.length > 0 ? (
           <>
             <ConversationView isStreaming={chatIsCreating} messages={messages} />
-            <div className="mx-auto w-full max-w-2xl shrink-0 pb-4">{prompt}</div>
+            <div className="mx-auto w-full max-w-2xl shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:px-0 md:pb-4">
+              {prompt}
+            </div>
           </>
         ) : (
-          <div className="flex min-h-0 flex-1 items-center justify-center">
-            <div className="w-full max-w-2xl -translate-y-[8%]">
-              <h1 className="mb-8 text-center text-4xl font-semibold tracking-tight text-foreground">
-                What do you want to create?
-              </h1>
-              {prompt}
+          // A phone: the question in the middle, the box at the bottom under
+          // the thumb. A wide screen: both together, centred.
+          <div className="flex min-h-0 flex-1 flex-col md:items-center md:justify-center">
+            <div className="flex w-full flex-1 flex-col md:max-w-2xl md:flex-none md:-translate-y-[8%]">
+              <div className="flex flex-1 items-center justify-center px-6 md:flex-none md:px-0">
+                <h1 className="text-center text-[28px] leading-tight font-semibold tracking-tight text-foreground md:mb-8 md:text-4xl">
+                  What do you want to create?
+                </h1>
+              </div>
+              <div className="shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:p-0">
+                {prompt}
+              </div>
             </div>
           </div>
         )}

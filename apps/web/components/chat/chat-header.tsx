@@ -4,7 +4,7 @@ import { useDeployChat, useDownloadChatFiles, useDuplicateChat } from '@v0-sdk/r
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { WebPreviewNavigationButton } from '@/components/ai-elements/web-preview'
-import { SidebarToggleButton } from '@/components/layout/app-shell'
+import { NewChatButton, SidebarToggleButton } from '@/components/layout/app-shell'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -20,6 +20,7 @@ import {
   DownloadIcon,
   ExternalIcon,
   EyeIcon,
+  MoreHorizontalIcon,
   RefreshIcon,
   SettingsIcon,
   SpinnerIcon,
@@ -29,16 +30,29 @@ import { cn } from '@/lib/utils'
 
 export type ChatView = 'preview' | 'code'
 
+/** What a phone shows: one pane at a time. */
+export type MobilePane = 'chat' | ChatView
+
+const MOBILE_PANES: Array<{ pane: MobilePane; label: string }> = [
+  { pane: 'chat', label: 'Chat' },
+  { pane: 'preview', label: 'Preview' },
+  { pane: 'code', label: 'Code' },
+]
+
 export function ChatHeader({
   chatId,
   title,
   view,
   onViewChange,
+  mobilePane,
+  onMobilePaneChange,
 }: {
   chatId: string
   title: string
   view: ChatView
   onViewChange: (view: ChatView) => void
+  mobilePane: MobilePane
+  onMobilePaneChange: (pane: MobilePane) => void
 }) {
   const router = useRouter()
   const deployChat = useDeployChat(`/api/chats/${encodeURIComponent(chatId)}/deploy`)
@@ -99,135 +113,249 @@ export function ChatHeader({
   }
 
   return (
-    <header className="flex h-12 shrink-0 items-center border-b border-border">
-      <div className="flex w-full shrink-0 items-center gap-2 px-3 md:w-80 md:max-w-[42%]">
-        <SidebarToggleButton />
-        <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{title}</span>
-      </div>
+    <>
+      {/* A phone: menu, the chat's title, its actions and a new chat; then the
+        Chat | Preview | Code switch. */}
+      <header className="flex shrink-0 flex-col md:hidden">
+        {/* Two equal sides, so the title sits in the middle. */}
+        <div className="grid h-12 grid-cols-[5.25rem_minmax(0,1fr)_5.25rem] items-center px-1.5">
+          <div className="flex">
+            <SidebarToggleButton />
+          </div>
+          <span className="truncate text-center text-[15px] font-semibold text-foreground">
+            {title}
+          </span>
+          <div className="flex justify-end gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  aria-label="Chat actions"
+                  className="size-10 shrink-0"
+                  size="icon"
+                  variant="ghost"
+                >
+                  <MoreHorizontalIcon size={20} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-52">
+                {deploymentUrl ? (
+                  <DropdownMenuItem asChild>
+                    <a href={deploymentUrl} rel="noreferrer" target="_blank">
+                      <VercelLogoIcon className="size-4" />
+                      View deployment
+                    </a>
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem
+                    disabled={isPublishing}
+                    onSelect={(event) => {
+                      event.preventDefault()
+                      void publish()
+                    }}
+                    title={error ?? undefined}
+                  >
+                    {isPublishing ? (
+                      <SpinnerIcon className="size-4 animate-spin" />
+                    ) : (
+                      <VercelLogoIcon className="size-4" />
+                    )}
+                    {isPublishing ? 'Publishing' : 'Publish'}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  disabled={isDuplicating}
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    void duplicate()
+                  }}
+                >
+                  {isDuplicating ? (
+                    <SpinnerIcon className="size-4 animate-spin" />
+                  ) : (
+                    <CopyIcon className="size-4" />
+                  )}
+                  {isDuplicating ? 'Duplicating' : 'Duplicate'}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={isDownloading}
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    void download()
+                  }}
+                >
+                  {isDownloading ? (
+                    <SpinnerIcon className="size-4 animate-spin" />
+                  ) : (
+                    <DownloadIcon className="size-4" />
+                  )}
+                  {isDownloading ? 'Downloading' : 'Download'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <NewChatButton />
+          </div>
+        </div>
+        {error || duplicateError ? (
+          <p className="px-4 pb-1 text-center text-xs text-destructive" role="alert">
+            {error ?? duplicateError}
+          </p>
+        ) : null}
+        <div className="px-3 pb-2">
+          <div aria-label="Show" className="flex rounded-full bg-muted p-1" role="tablist">
+            {MOBILE_PANES.map(({ pane, label }) => (
+              <button
+                aria-selected={mobilePane === pane}
+                className={cn(
+                  'h-8 flex-1 rounded-full text-sm font-medium text-muted-foreground transition-colors',
+                  mobilePane === pane && 'bg-background text-foreground shadow-sm',
+                )}
+                key={pane}
+                onClick={() => onMobilePaneChange(pane)}
+                role="tab"
+                type="button"
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
 
-      <div className="hidden h-full min-w-0 flex-1 items-center justify-between gap-3 px-3 md:flex">
-        <div className="flex shrink-0 items-center rounded-md bg-muted p-0.5">
-          <Button
-            aria-label="Preview"
-            aria-pressed={view === 'preview'}
-            className={cn('size-6 rounded-sm p-0', view === 'preview' && 'bg-background shadow-xs')}
-            onClick={() => onViewChange('preview')}
-            size="icon-xs"
-            variant="ghost"
-          >
-            <EyeIcon className="size-3.5" />
-          </Button>
-          <Button
-            aria-label="Code"
-            aria-pressed={view === 'code'}
-            className={cn('size-6 rounded-sm p-0', view === 'code' && 'bg-background shadow-xs')}
-            onClick={() => onViewChange('code')}
-            size="icon-xs"
-            variant="ghost"
-          >
-            <CodeIcon className="size-3.5" />
-          </Button>
+      <header className="hidden h-12 shrink-0 items-center border-b border-border md:flex">
+        <div className="flex shrink-0 items-center gap-2 px-3 md:w-80 md:max-w-[42%]">
+          <SidebarToggleButton />
+          <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
+            {title}
+          </span>
         </div>
 
-        <div className="hidden h-7 min-w-[150px] max-w-[420px] flex-1 items-center rounded-md border border-border px-0.5 lg:flex">
-          <Button
-            aria-label="Back"
-            className="size-6 text-muted-foreground"
-            disabled
-            size="icon-xs"
-            variant="ghost"
-          >
-            <ChevronLeftIcon className="size-3.5" />
-          </Button>
-          <Button
-            aria-label="Forward"
-            className="size-6 text-muted-foreground"
-            disabled
-            size="icon-xs"
-            variant="ghost"
-          >
-            <ChevronRightIcon className="size-3.5" />
-          </Button>
-          <span className="min-w-0 flex-1 truncate px-2 text-xs text-muted-foreground">/</span>
-          <WebPreviewNavigationButton className="size-6 p-0" disabled tooltip="Refresh preview">
-            <RefreshIcon className="size-3.5" />
-          </WebPreviewNavigationButton>
-          <WebPreviewNavigationButton
-            className="size-6 p-0"
-            disabled
-            tooltip="Open preview in new tab"
-          >
-            <ExternalIcon className="size-3.5" />
-          </WebPreviewNavigationButton>
-        </div>
-
-        <div className="flex shrink-0 items-center gap-1.5">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button aria-label="Project menu" className="size-7" size="icon-sm" variant="ghost">
-                <SettingsIcon className="size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                disabled={isDuplicating}
-                onSelect={(event) => {
-                  event.preventDefault()
-                  void duplicate()
-                }}
-                title={duplicateError ?? undefined}
-              >
-                {isDuplicating ? (
-                  <SpinnerIcon className="size-4 animate-spin" />
-                ) : (
-                  <CopyIcon className="size-4" />
-                )}
-                {isDuplicating ? 'Duplicating' : 'Duplicate'}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={isDownloading}
-                onSelect={(event) => {
-                  event.preventDefault()
-                  void download()
-                }}
-                title={duplicateError ?? undefined}
-              >
-                {isDownloading ? (
-                  <SpinnerIcon className="size-4 animate-spin" />
-                ) : (
-                  <DownloadIcon className="size-4" />
-                )}
-                {isDownloading ? 'Downloading' : 'Download'}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {deploymentUrl ? (
-            <Button asChild className="h-7 gap-1.5 rounded-md px-2 text-xs" size="sm">
-              <a href={deploymentUrl} rel="noreferrer" target="_blank">
-                <VercelLogoIcon className="size-3.5" />
-                View
-              </a>
-            </Button>
-          ) : (
+        <div className="hidden h-full min-w-0 flex-1 items-center justify-between gap-3 px-3 md:flex">
+          <div className="flex shrink-0 items-center rounded-md bg-muted p-0.5">
             <Button
-              aria-label={error ?? 'Publish chat'}
-              className="h-7 min-w-[72px] gap-1.5 rounded-md px-2 text-xs"
-              disabled={isPublishing}
-              onClick={publish}
-              size="sm"
-              title={error ?? undefined}
-            >
-              {isPublishing ? (
-                <SpinnerIcon className="size-3.5 animate-spin" />
-              ) : (
-                <VercelLogoIcon className="size-3.5" />
+              aria-label="Preview"
+              aria-pressed={view === 'preview'}
+              className={cn(
+                'size-6 rounded-sm p-0',
+                view === 'preview' && 'bg-background shadow-xs',
               )}
-              {isPublishing ? 'Publishing' : 'Publish'}
+              onClick={() => onViewChange('preview')}
+              size="icon-xs"
+              variant="ghost"
+            >
+              <EyeIcon className="size-3.5" />
             </Button>
-          )}
+            <Button
+              aria-label="Code"
+              aria-pressed={view === 'code'}
+              className={cn('size-6 rounded-sm p-0', view === 'code' && 'bg-background shadow-xs')}
+              onClick={() => onViewChange('code')}
+              size="icon-xs"
+              variant="ghost"
+            >
+              <CodeIcon className="size-3.5" />
+            </Button>
+          </div>
+
+          <div className="hidden h-7 min-w-[150px] max-w-[420px] flex-1 items-center rounded-md border border-border px-0.5 lg:flex">
+            <Button
+              aria-label="Back"
+              className="size-6 text-muted-foreground"
+              disabled
+              size="icon-xs"
+              variant="ghost"
+            >
+              <ChevronLeftIcon className="size-3.5" />
+            </Button>
+            <Button
+              aria-label="Forward"
+              className="size-6 text-muted-foreground"
+              disabled
+              size="icon-xs"
+              variant="ghost"
+            >
+              <ChevronRightIcon className="size-3.5" />
+            </Button>
+            <span className="min-w-0 flex-1 truncate px-2 text-xs text-muted-foreground">/</span>
+            <WebPreviewNavigationButton className="size-6 p-0" disabled tooltip="Refresh preview">
+              <RefreshIcon className="size-3.5" />
+            </WebPreviewNavigationButton>
+            <WebPreviewNavigationButton
+              className="size-6 p-0"
+              disabled
+              tooltip="Open preview in new tab"
+            >
+              <ExternalIcon className="size-3.5" />
+            </WebPreviewNavigationButton>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button aria-label="Project menu" className="size-7" size="icon-sm" variant="ghost">
+                  <SettingsIcon className="size-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  disabled={isDuplicating}
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    void duplicate()
+                  }}
+                  title={duplicateError ?? undefined}
+                >
+                  {isDuplicating ? (
+                    <SpinnerIcon className="size-4 animate-spin" />
+                  ) : (
+                    <CopyIcon className="size-4" />
+                  )}
+                  {isDuplicating ? 'Duplicating' : 'Duplicate'}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  disabled={isDownloading}
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    void download()
+                  }}
+                  title={duplicateError ?? undefined}
+                >
+                  {isDownloading ? (
+                    <SpinnerIcon className="size-4 animate-spin" />
+                  ) : (
+                    <DownloadIcon className="size-4" />
+                  )}
+                  {isDownloading ? 'Downloading' : 'Download'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {deploymentUrl ? (
+              <Button asChild className="h-7 gap-1.5 rounded-md px-2 text-xs" size="sm">
+                <a href={deploymentUrl} rel="noreferrer" target="_blank">
+                  <VercelLogoIcon className="size-3.5" />
+                  View
+                </a>
+              </Button>
+            ) : (
+              <Button
+                aria-label={error ?? 'Publish chat'}
+                className="h-7 min-w-[72px] gap-1.5 rounded-md px-2 text-xs"
+                disabled={isPublishing}
+                onClick={publish}
+                size="sm"
+                title={error ?? undefined}
+              >
+                {isPublishing ? (
+                  <SpinnerIcon className="size-3.5 animate-spin" />
+                ) : (
+                  <VercelLogoIcon className="size-3.5" />
+                )}
+                {isPublishing ? 'Publishing' : 'Publish'}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   )
 }
 

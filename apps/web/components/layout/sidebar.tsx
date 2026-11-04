@@ -10,10 +10,13 @@ import { ChatItem } from '@/components/layout/chat-item'
 import { ApiKeyDialog } from '@/components/layout/api-key-dialog'
 import type { getSidebarChats } from '@/lib/sidebar-chats'
 import { cn } from '@/lib/utils'
-import { ChevronDownIcon, ChevronRightIcon, SidebarToggleIcon } from '@/lib/icons'
+import { ChevronDownIcon, ChevronRightIcon, CrossIcon, SidebarToggleIcon } from '@/lib/icons'
 
 type SidebarProps = {
   open: boolean
+  /** A phone: the drawer is out. */
+  mobileOpen: boolean
+  onMobileClose: () => void
   apiKeyStatus: {
     hasBrowserApiKey: boolean
     hasEnvironmentApiKey: boolean
@@ -28,6 +31,7 @@ export function Sidebar(props: SidebarProps) {
       fallback={
         <SidebarSkeleton
           apiKeyStatus={props.apiKeyStatus}
+          mobileOpen={props.mobileOpen}
           onToggle={props.onToggle}
           open={props.open}
         />
@@ -38,22 +42,30 @@ export function Sidebar(props: SidebarProps) {
   )
 }
 
+/** The aside: beside the page on a wide screen; on a phone, a drawer over it
+ *  that slides in from the left. */
+function asideClass(open: boolean, mobileOpen: boolean) {
+  return cn(
+    'flex shrink-0 flex-col gap-1 overflow-hidden bg-sidebar',
+    'fixed inset-y-0 left-0 z-50 w-[85vw] max-w-80 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] transition-[translate,visibility] duration-300 ease-out',
+    // Shut, it slides out, then leaves the tab order and the screen reader;
+    // its shadow shows only while it is out.
+    mobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full max-md:invisible',
+    'md:static md:z-auto md:max-w-none md:translate-x-0 md:pt-0 md:pb-0 md:shadow-none md:transition-[width] md:duration-200',
+    open ? 'md:w-64 md:border-r md:border-sidebar-border' : 'md:w-0',
+  )
+}
+
 function SidebarSkeleton({
   open,
+  mobileOpen,
   apiKeyStatus,
   onToggle,
-}: Pick<SidebarProps, 'open' | 'apiKeyStatus' | 'onToggle'>) {
+}: Pick<SidebarProps, 'open' | 'mobileOpen' | 'apiKeyStatus' | 'onToggle'>) {
   return (
-    <aside
-      aria-busy="true"
-      aria-label="Loading sidebar"
-      className={cn(
-        'flex shrink-0 flex-col gap-1 overflow-hidden bg-sidebar transition-[width] duration-200',
-        open ? 'w-64 border-r border-sidebar-border' : 'w-0',
-      )}
-    >
-      {open ? (
-        <div className="flex w-64 flex-1 flex-col gap-1 overflow-y-auto p-2">
+    <aside aria-busy="true" aria-label="Loading sidebar" className={asideClass(open, mobileOpen)}>
+      {open || mobileOpen ? (
+        <div className="flex w-full flex-1 flex-col gap-1 overflow-y-auto p-3 md:w-64 md:p-2">
           <div className="mb-1 flex items-center gap-1">
             <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1 text-sm font-medium text-sidebar-foreground">
               <img src="/acme-logo.svg" alt="" width={24} height={24} className="size-6 shrink-0" />
@@ -63,7 +75,7 @@ function SidebarSkeleton({
 
             <Button
               aria-label="Collapse sidebar"
-              className="size-8 shrink-0 text-muted-foreground"
+              className="hidden size-8 shrink-0 text-muted-foreground md:inline-flex"
               onClick={onToggle}
               size="icon"
               variant="ghost"
@@ -73,7 +85,7 @@ function SidebarSkeleton({
           </div>
 
           <button
-            className="flex items-center justify-center rounded-lg border border-sidebar-border bg-background px-3 py-1.5 text-sm font-medium text-sidebar-foreground shadow-sm transition-colors hover:bg-accent"
+            className="flex items-center justify-center rounded-xl border border-sidebar-border bg-background px-3 py-2.5 text-[15px] font-medium text-sidebar-foreground shadow-sm transition-colors hover:bg-accent active:scale-[0.99] md:rounded-lg md:py-1.5 md:text-sm"
             onClick={() => window.location.assign('/')}
             type="button"
           >
@@ -113,7 +125,14 @@ function ChatNamesSkeleton() {
   )
 }
 
-function SidebarContent({ open, apiKeyStatus, onToggle, sidebarChats }: SidebarProps) {
+function SidebarContent({
+  open,
+  mobileOpen,
+  onMobileClose,
+  apiKeyStatus,
+  onToggle,
+  sidebarChats,
+}: SidebarProps) {
   const initialChats = use(sidebarChats)
   const pathname = usePathname()
   const router = useRouter()
@@ -178,14 +197,9 @@ function SidebarContent({ open, apiKeyStatus, onToggle, sidebarChats }: SidebarP
   }
 
   return (
-    <aside
-      className={cn(
-        'flex shrink-0 flex-col gap-1 overflow-hidden bg-sidebar transition-[width] duration-200',
-        open ? 'w-64 border-r border-sidebar-border' : 'w-0',
-      )}
-    >
-      {open ? (
-        <div className="flex w-64 flex-1 flex-col gap-1 overflow-y-auto p-2">
+    <aside aria-label="Chats" className={asideClass(open, mobileOpen)}>
+      {open || mobileOpen ? (
+        <div className="flex w-full flex-1 flex-col gap-1 overflow-y-auto overscroll-contain p-3 md:w-64 md:p-2">
           <div className="mb-1 flex items-center gap-1">
             <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md px-1.5 py-1 text-sm font-medium text-sidebar-foreground">
               <img src="/acme-logo.svg" alt="" width={24} height={24} className="size-6 shrink-0" />
@@ -195,17 +209,26 @@ function SidebarContent({ open, apiKeyStatus, onToggle, sidebarChats }: SidebarP
 
             <Button
               aria-label="Collapse sidebar"
-              className="size-8 shrink-0 text-muted-foreground"
+              className="hidden size-8 shrink-0 text-muted-foreground md:inline-flex"
               onClick={onToggle}
               size="icon"
               variant="ghost"
             >
               <SidebarToggleIcon size={18} />
             </Button>
+            <Button
+              aria-label="Close chats"
+              className="size-10 shrink-0 text-muted-foreground md:hidden"
+              onClick={onMobileClose}
+              size="icon"
+              variant="ghost"
+            >
+              <CrossIcon size={20} />
+            </Button>
           </div>
 
           <button
-            className="flex items-center justify-center rounded-lg border border-sidebar-border bg-background px-3 py-1.5 text-sm font-medium text-sidebar-foreground shadow-sm transition-colors hover:bg-accent"
+            className="flex items-center justify-center rounded-xl border border-sidebar-border bg-background px-3 py-2.5 text-[15px] font-medium text-sidebar-foreground shadow-sm transition-colors hover:bg-accent active:scale-[0.99] md:rounded-lg md:py-1.5 md:text-sm"
             onClick={() => window.location.assign('/')}
             type="button"
           >
@@ -214,7 +237,7 @@ function SidebarContent({ open, apiKeyStatus, onToggle, sidebarChats }: SidebarP
 
           {/* Favorites */}
           <Collapsible className="mt-4" onOpenChange={setFavoritesOpen} open={favoritesOpen}>
-            <CollapsibleTrigger className="group flex w-full items-center gap-1 px-2.5 py-1 text-xs font-medium text-muted-foreground">
+            <CollapsibleTrigger className="group flex w-full items-center gap-1 px-2.5 py-2 text-[13px] font-medium text-muted-foreground md:py-1 md:text-xs">
               <span className="flex-1 text-left">Favorites</span>
               <ChevronRightIcon className="size-3.5 transition-transform group-data-[state=open]:rotate-90" />
             </CollapsibleTrigger>
@@ -229,7 +252,7 @@ function SidebarContent({ open, apiKeyStatus, onToggle, sidebarChats }: SidebarP
 
           {/* Recent Chats */}
           <Collapsible className="mt-2" defaultOpen>
-            <CollapsibleTrigger className="group flex w-full items-center gap-1 px-2.5 py-1 text-xs font-medium text-muted-foreground">
+            <CollapsibleTrigger className="group flex w-full items-center gap-1 px-2.5 py-2 text-[13px] font-medium text-muted-foreground md:py-1 md:text-xs">
               <span className="flex-1 text-left">Recent Chats</span>
               <ChevronDownIcon className="size-3.5 transition-transform group-data-[state=closed]:-rotate-90" />
             </CollapsibleTrigger>

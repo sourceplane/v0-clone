@@ -15,6 +15,7 @@
     "@cloudflare/workers-types": "^4.20260701.1",
     "@types/node": "^22.9.0",
     "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@types/react-test-renderer": "^19.0.0",
     "@v0-sdk/react": "3.0.12",
     "next": "16.3.8",

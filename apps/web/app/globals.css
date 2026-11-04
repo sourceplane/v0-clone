@@ -144,7 +144,26 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    /* A tap shows the control's own pressed state, not the browser's grey box. */
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     @apply bg-background text-foreground font-sans;
+    /* The page stays put: no rubber-band of the whole app, no pull to refresh. */
+    overscroll-behavior: none;
+  }
+  /* No double-tap zoom, so taps answer at once. */
+  a,
+  button,
+  input,
+  label,
+  select,
+  textarea,
+  [role='button'],
+  [role='tab'] {
+    touch-action: manipulation;
   }
 }

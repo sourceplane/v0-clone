@@ -102,12 +102,17 @@ function CodeEditor({
   }
 
   return (
-    <div className="flex h-full min-h-0 bg-background">
-      <aside className="w-52 shrink-0 overflow-y-auto border-r border-border p-2">
+    // A phone: the files are a row of chips above the editor; a wide screen:
+    // a list beside it.
+    <div className="flex h-full min-h-0 flex-col bg-background md:flex-row">
+      <aside
+        aria-label="Files"
+        className="flex shrink-0 gap-1.5 overflow-x-auto border-b border-border p-2 md:block md:w-52 md:overflow-x-hidden md:overflow-y-auto md:border-r md:border-b-0"
+      >
         {files.map((file) => (
           <button
             className={cn(
-              'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent hover:text-foreground',
+              'flex max-w-[70vw] shrink-0 items-center gap-2 rounded-full border border-border px-3 py-1.5 text-left text-[13px] text-muted-foreground hover:bg-accent hover:text-foreground md:w-full md:max-w-none md:rounded-md md:border-0 md:px-2 md:text-xs',
               file.path === selectedPath && 'bg-accent text-foreground',
             )}
             key={file.path}
@@ -138,6 +143,7 @@ function CodeEditor({
           ) : null}
           <Button
             disabled={changedFiles.length === 0 || isSaving || !isPreviewReady}
+            className="max-md:h-8 max-md:px-3 max-md:text-sm"
             onClick={save}
             size="xs"
             title={isPreviewReady ? undefined : 'Preview is still loading'}
@@ -150,7 +156,7 @@ function CodeEditor({
         {selectedFile?.encoding === 'utf8' ? (
           <textarea
             aria-label={`Edit ${selectedFile.path}`}
-            className="min-h-0 flex-1 resize-none bg-background p-4 font-mono text-xs leading-5 text-foreground outline-none"
+            className="min-h-0 flex-1 resize-none bg-background p-4 font-mono text-base leading-6 text-foreground outline-none md:text-xs md:leading-5"
             disabled={isSaving}
             onChange={(event) => updateSelectedFile(event.target.value)}
             spellCheck={false}
