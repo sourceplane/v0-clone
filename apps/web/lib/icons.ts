@@ -27,6 +27,8 @@ export {
   FullscreenClose as FullscreenCloseIcon,
   RefreshClockwise as RefreshIcon,
   SidebarLeft as SidebarToggleIcon,
+  Menu as MenuIcon,
+  PencilEdit as NewChatIcon,
   Coins as CreditsIcon,
   Check as CheckIcon,
   CheckCircle as CheckCircleIcon,

@@ -90,12 +90,15 @@ export function ChatItem({
     <>
       <div
         className={cn(
-          'group/item relative flex items-center rounded-md text-sm text-sidebar-foreground transition-colors hover:bg-sidebar-accent',
+          'group/item relative flex items-center rounded-lg text-[15px] text-sidebar-foreground transition-colors hover:bg-sidebar-accent md:rounded-md md:text-sm',
           (isActive || menuOpen) && 'bg-sidebar-accent',
         )}
       >
         <Link
-          className={cn('min-w-0 flex-1 truncate py-1.5 pr-7 pl-2.5', isActive && 'font-medium')}
+          className={cn(
+            'min-w-0 flex-1 truncate py-2.5 pr-10 pl-3 md:py-1.5 md:pr-7 md:pl-2.5',
+            isActive && 'font-medium',
+          )}
           href={`/chats/${chat.id}`}
         >
           {chat.title || 'Untitled'}
@@ -106,7 +109,8 @@ export function ChatItem({
             <button
               aria-label="Chat options"
               className={cn(
-                'absolute right-1 flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-accent focus-visible:opacity-100 group-hover/item:opacity-100',
+                // A touch screen has no hover: the options button is always there.
+                'absolute right-1 flex size-9 items-center justify-center rounded-md text-muted-foreground transition-opacity hover:bg-accent focus-visible:opacity-100 group-hover/item:opacity-100 md:size-6 [@media(hover:hover)]:opacity-0',
                 menuOpen && 'opacity-100',
               )}
               type="button"
@@ -114,7 +118,7 @@ export function ChatItem({
               <MoreHorizontalIcon className="size-4" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-44" side="right">
+          <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuItem disabled={busy} onSelect={() => void handleToggleFavorite()}>
               {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
             </DropdownMenuItem>

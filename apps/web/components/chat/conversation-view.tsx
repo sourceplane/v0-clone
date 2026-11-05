@@ -61,7 +61,7 @@ export function ConversationView({
 
   return (
     <div className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-4 px-3 py-4 text-[13px] leading-relaxed">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-4 text-[15px] leading-relaxed md:gap-4 md:px-3 md:text-[13px]">
         {visibleMessages.length === 0 ? (
           <p className="text-center text-sm text-muted-foreground">No messages yet.</p>
         ) : (
@@ -116,8 +116,8 @@ function ConversationMessage({
       <MessageContent
         className={
           message.role === 'user'
-            ? 'w-fit [overflow-wrap:anywhere] group-[.is-user]:max-w-[80%] group-[.is-user]:rounded-2xl group-[.is-user]:border group-[.is-user]:border-border group-[.is-user]:bg-muted group-[.is-user]:px-3 group-[.is-user]:py-1.5 group-[.is-user]:text-[13px]'
-            : 'w-full text-[13px] leading-relaxed'
+            ? 'w-fit [overflow-wrap:anywhere] group-[.is-user]:max-w-[85%] group-[.is-user]:rounded-3xl group-[.is-user]:border group-[.is-user]:border-border group-[.is-user]:bg-muted group-[.is-user]:px-4 group-[.is-user]:py-2.5 group-[.is-user]:text-[15px] md:group-[.is-user]:max-w-[80%] md:group-[.is-user]:rounded-2xl md:group-[.is-user]:px-3 md:group-[.is-user]:py-1.5 md:group-[.is-user]:text-[13px]'
+            : 'w-full text-[15px] leading-relaxed md:text-[13px]'
         }
       >
         <MessageParts isStreaming={isStreaming} message={message} />

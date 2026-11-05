@@ -249,7 +249,7 @@ export function ChatConversation({
         taskDisabled={isSubmitting || restoringMessageId !== null}
         vercelProjectId={vercelProjectId}
       />
-      <div className="shrink-0 px-3 pb-3">
+      <div className="shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:pb-3">
         <PromptBox
           compact
           isSubmitting={isSubmitting || restoringMessageId !== null}

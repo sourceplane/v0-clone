@@ -8,9 +8,10 @@ import {
   CodeEditorPane,
   type ChatFilesResult,
 } from '@/components/chat/code-editor'
-import { ChatHeader, type ChatView } from '@/components/chat/chat-header'
+import { ChatHeader, type ChatView, type MobilePane } from '@/components/chat/chat-header'
 import { ChatConversation } from '@/components/chat/chat-conversation'
 import { PreviewPane } from '@/components/preview/preview-pane'
+import { cn } from '@/lib/utils'
 import { designModeMessageText, type DesignModeTurn } from '@/lib/design-mode-message'
 import type { DesignModeMessage } from 'v0/browser'
 
@@ -25,6 +26,9 @@ export function ChatWorkspace({
 }) {
   const router = useRouter()
   const [view, setView] = useState<ChatView>('preview')
+  // A phone shows one pane at a time, the chat first; a wide screen shows the
+  // chat beside the preview or the code.
+  const [mobilePane, setMobilePane] = useState<MobilePane>('chat')
   const [contentRevision, setContentRevision] = useState(0)
   const [previewRevision, setPreviewRevision] = useState(0)
   const [isPreviewReady, setIsPreviewReady] = useState(false)
@@ -69,16 +73,28 @@ export function ChatWorkspace({
     router.refresh()
   }, [router])
 
+  const handleMobilePaneChange = useCallback((pane: MobilePane) => {
+    setMobilePane(pane)
+    if (pane !== 'chat') setView(pane)
+  }, [])
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <ChatHeader
         chatId={chat.id}
+        mobilePane={mobilePane}
+        onMobilePaneChange={handleMobilePaneChange}
         onViewChange={setView}
         title={chat.title ?? 'Untitled chat'}
         view={view}
       />
       <div className="flex min-h-0 flex-1">
-        <div className="flex min-w-0 w-full shrink-0 flex-col border-r border-border md:w-80 md:max-w-[42%]">
+        <div
+          className={cn(
+            'min-w-0 w-full shrink-0 flex-col border-border md:flex md:w-80 md:max-w-[42%] md:border-r',
+            mobilePane === 'chat' ? 'flex' : 'hidden',
+          )}
+        >
           <ChatConversation
             chatId={chat.id}
             messages={messages}
@@ -90,7 +106,7 @@ export function ChatWorkspace({
             vercelProjectId={chat.vercelProjectId}
           />
         </div>
-        <div className="hidden min-w-0 flex-1 md:block">
+        <div className={cn('min-w-0 flex-1 md:block', mobilePane === 'chat' ? 'hidden' : 'block')}>
           <div className={view === 'preview' ? 'h-full' : 'hidden'}>
             <PreviewPane
               chatId={chat.id}

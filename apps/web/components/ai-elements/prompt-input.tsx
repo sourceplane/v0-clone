@@ -775,6 +775,10 @@ export const PromptInputTextarea = ({
       if (e.shiftKey) {
         return
       }
+      // A touch keyboard's return key starts a new line; the send button sends.
+      if (window.matchMedia('(pointer: coarse)').matches) {
+        return
+      }
       e.preventDefault()
 
       // Check if the submit button is disabled before submitting

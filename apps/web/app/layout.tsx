@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { SITE_NAME } from '@/lib/site'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
@@ -16,6 +16,22 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: SITE_NAME,
   description: 'A v0.app clone built with AI Elements and Geist.',
+  // Added to a phone's home screen, it opens full screen, like an app.
+  appleWebApp: { capable: true, title: SITE_NAME, statusBarStyle: 'default' },
+}
+
+// A phone: the page runs edge to edge (the shell pads for the notch and the
+// home bar), the keyboard shrinks the page rather than covering the composer,
+// and the browser's bars take the page's colour.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  interactiveWidget: 'resizes-content',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#0f0f11' },
+  ],
 }
 
 export default async function RootLayout({
