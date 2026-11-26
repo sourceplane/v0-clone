@@ -228,8 +228,8 @@ export function HomeClient() {
             <DialogHeader>
               <DialogTitle>Import GitHub repository</DialogTitle>
               <DialogDescription>
-                Start a new chat from a public repository or a private repository connected through
-                Vercel.
+                Start a new chat from a public repository or a private repository your v0 account
+                can reach.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-2">

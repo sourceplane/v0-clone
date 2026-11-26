@@ -280,7 +280,7 @@ function IntegrationTask({
       const result = await createProjectMutation.trigger({})
       setVercelProjectId(result.vercelProjectId)
     } catch (error) {
-      setProjectError(error instanceof Error ? error.message : 'Failed to create Vercel project.')
+      setProjectError(error instanceof Error ? error.message : 'Failed to create project.')
     }
   }
 
@@ -308,7 +308,7 @@ function IntegrationTask({
       {data.requestedIntegrations.length > 0 ? (
         vercelProjectId ? (
           <p className="text-muted-foreground">
-            Vercel project ready: <span className="font-mono">{vercelProjectId}</span>
+            Project ready: <span className="font-mono">{vercelProjectId}</span>
           </p>
         ) : (
           <div className="grid justify-items-start gap-1.5">
@@ -319,7 +319,7 @@ function IntegrationTask({
               type="button"
               variant="outline"
             >
-              {isCreatingProject ? 'Creating project…' : 'Create Vercel project'}
+              {isCreatingProject ? 'Creating project…' : 'Create project'}
             </Button>
             {projectError ? <p className="text-destructive">{projectError}</p> : null}
           </div>

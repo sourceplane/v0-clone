@@ -23,8 +23,8 @@ import {
   RefreshIcon,
   SettingsIcon,
   SpinnerIcon,
-  VercelLogoIcon,
 } from '@/lib/icons'
+import { OrunbaseMarkIcon } from '@/components/ui/orunbase-mark'
 import { cn } from '@/lib/utils'
 
 export type ChatView = 'preview' | 'code'
@@ -204,7 +204,7 @@ export function ChatHeader({
           {deploymentUrl ? (
             <Button asChild className="h-7 gap-1.5 rounded-md px-2 text-xs" size="sm">
               <a href={deploymentUrl} rel="noreferrer" target="_blank">
-                <VercelLogoIcon className="size-3.5" />
+                <OrunbaseMarkIcon className="size-3.5" />
                 View
               </a>
             </Button>
@@ -220,7 +220,7 @@ export function ChatHeader({
               {isPublishing ? (
                 <SpinnerIcon className="size-3.5 animate-spin" />
               ) : (
-                <VercelLogoIcon className="size-3.5" />
+                <OrunbaseMarkIcon className="size-3.5" />
               )}
               {isPublishing ? 'Publishing' : 'Publish'}
             </Button>

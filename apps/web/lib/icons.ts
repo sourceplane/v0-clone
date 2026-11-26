@@ -40,7 +40,6 @@ export {
   Copy as CopyIcon,
   Download as DownloadIcon,
   LogoV0 as V0LogoIcon,
-  LogoVercel as VercelLogoIcon,
   Stop as StopIcon,
   SettingsGear as SettingsIcon,
   FileText as FileIcon,
